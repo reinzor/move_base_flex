@@ -198,15 +198,6 @@ namespace mbf_abstract_nav
 
   protected:
 
-    //! the local planer to calculate the velocity command
-    boost::shared_ptr<mbf_abstract_core::AbstractPlanner> planner_;
-
-    //! the name of the loaded planner plugin
-    std::string plugin_name_;
-
-    //! true, if the planner execution has been canceled.
-    bool cancel_;
-
     /**
      * @brief The main run method, a thread will execute this method. It contains the main planner execution loop.
      */
@@ -224,6 +215,26 @@ namespace mbf_abstract_nav
     */
     void setPluginInfo(const uint32_t &plugin_code, const std::string &plugin_msg);
 
+    //! the local planer to calculate the velocity command
+    boost::shared_ptr<mbf_abstract_core::AbstractPlanner> planner_;
+
+    //! the name of the loaded planner plugin
+    std::string plugin_name_;
+
+    //! true, if the planner execution has been canceled.
+    bool cancel_;
+
+    //! optional goal tolerance, in meters
+    double tolerance_;
+
+    //! planning cycle frequency
+    double frequency_;
+
+    //! planning patience duration time
+    ros::Duration patience_;
+
+    //! planning max retries
+    int max_retries_;
 
   private:
 
@@ -302,18 +313,6 @@ namespace mbf_abstract_nav
 
     //! the current goal pose used for planning
     geometry_msgs::PoseStamped goal_;
-
-    //! optional goal tolerance, in meters
-    double tolerance_;
-
-    //! planning cycle frequency
-    double frequency_;
-
-    //! planning patience duration time
-    ros::Duration patience_;
-
-    //! planning max retries
-    int max_retries_;
 
     //! main cycle variable of the execution loop
     bool planning_;

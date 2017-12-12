@@ -218,11 +218,13 @@ namespace mbf_abstract_nav
     //! The maximum number of retries
     int max_retries_;
 
+    //! Controller cycle frequency
+    double frequency_;
+
     //! The time / duration of patience, before changing the state.
     ros::Duration patience_;
 
   private:
-
 
 
     /**

@@ -42,7 +42,6 @@
 #include <geometry_msgs/PoseArray.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <base_local_planner/footprint_helper.h>
-#include <mbf_msgs/MoveBaseAction.h>
 #include <mbf_abstract_nav/MoveBaseFlexConfig.h>
 #include <actionlib/client/simple_action_client.h>
 
@@ -94,6 +93,11 @@ CostmapNavigationServer::CostmapNavigationServer(const boost::shared_ptr<tf::Tra
     global_costmap_active_ = false;
   }
 
+  // advertise a modernized MoveBase action server
+  move_base_as_ptr_ = ActionServerMoveBasePtr(
+      new ActionServerMoveBase(private_nh_, "move_base",
+                               boost::bind(&CostmapNavigationServer::callActionMoveBase, this, _1), false));
+
   // advertise services and current goal topic
   check_pose_cost_srv_ = private_nh_.advertiseService("check_pose_cost",
                                                       &CostmapNavigationServer::callServiceCheckPoseCost, this);
@@ -130,6 +134,10 @@ void CostmapNavigationServer::reconfigure(mbf_costmap_nav::MoveBaseFlexConfig &c
     // if someone sets restore defaults on the parameter server, prevent looping
     config.restore_defaults = false;
   }
+
+  // notify of changes in frequencies to move_base action server
+  p_freq_change_ = planning_ptr_->frequency_ != config.planner_frequency;
+  c_freq_change_ = moving_ptr_->frequency_ != config.controller_frequency;
 
   // fill the abstract configuration common to all MBF-based navigation
   mbf_abstract_nav::MoveBaseFlexConfig abstract_config;

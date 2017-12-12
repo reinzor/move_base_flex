@@ -44,6 +44,7 @@
 #include <std_srvs/Empty.h>
 
 #include <mbf_msgs/CheckPose.h>
+#include <mbf_msgs/MoveBaseAction.h>
 #include <mbf_costmap_nav/MoveBaseFlexConfig.h>
 
 #include "mbf_abstract_nav/abstract_navigation_server.h"
@@ -172,6 +173,12 @@ protected:
   //! true, if the global costmap is active
   bool global_costmap_active_;
 
+  typedef actionlib::SimpleActionServer<mbf_msgs::MoveBaseAction> ActionServerMoveBase;
+  typedef boost::shared_ptr<ActionServerMoveBase> ActionServerMoveBasePtr;
+
+  //! Shared pointer to the MoveBase action server
+  ActionServerMoveBasePtr move_base_as_ptr_;
+
   //! Service Server for the check_pose_cost service
   ros::ServiceServer check_pose_cost_srv_;
 
@@ -180,6 +187,69 @@ protected:
 
   //! stop updating costmaps when not planning or controlling, if true
   bool shutdown_costmaps_;
+
+
+  bool isQuaternionValid(const geometry_msgs::Quaternion &q);
+  geometry_msgs::PoseStamped goalToGlobalFrame(const geometry_msgs::PoseStamped &goal_pose_msg);
+  bool makePlan(const geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped> &plan);
+  void wakePlanner(const ros::TimerEvent &event);
+  void planThread();
+  void callActionMoveBase(const mbf_msgs::MoveBaseGoalConstPtr &move_base_goal);
+  double distance(const geometry_msgs::PoseStamped &p1, const geometry_msgs::PoseStamped &p2);
+  bool executeCycle(geometry_msgs::PoseStamped &goal, std::vector<geometry_msgs::PoseStamped> &global_plan);
+  void resetState();
+
+  unsigned int recovery_index_ = 0;
+  std::vector<std::string> recovery_behaviors_ = recovery_ptr_->listRecoveryBehaviors();
+
+  tf::Stamped<tf::Pose> global_pose_;
+  double planner_frequency_, controller_frequency_, inscribed_radius_, circumscribed_radius_;
+  double planner_patience_, controller_patience_;
+  int32_t max_planning_retries_;
+  uint32_t planning_retries_;
+  double conservative_reset_dist_, clearing_radius_;
+  //ros::Publisher current_goal_pub_, vel_pub_, action_goal_pub_;
+//  ros::Subscriber goal_sub_;
+//  ros::ServiceServer make_plan_srv_, clear_costmaps_srv_;
+  bool clearing_rotation_allowed_, recovery_behavior_enabled_;
+  double oscillation_timeout_, oscillation_distance_;
+
+
+  enum MoveBaseState {
+    PLANNING,
+    CONTROLLING,
+    CLEARING
+  };
+
+  enum RecoveryTrigger
+  {
+    PLANNING_R,
+    CONTROLLING_R,
+    OSCILLATION_R
+  };
+
+  MoveBaseState state_;
+  RecoveryTrigger recovery_trigger_;
+
+  ros::Time last_valid_plan_, last_valid_control_, last_oscillation_reset_;
+  geometry_msgs::PoseStamped oscillation_pose_;
+
+  //set up plan triple buffer
+  std::vector<geometry_msgs::PoseStamped>* planner_plan_;
+  std::vector<geometry_msgs::PoseStamped>* latest_plan_;
+  std::vector<geometry_msgs::PoseStamped>* controller_plan_;
+
+  //set up the planner's thread
+  bool runPlanner_;
+  bool new_global_plan_;
+  bool p_freq_change_, c_freq_change_;
+  boost::recursive_mutex planner_mutex_;
+  boost::condition_variable_any planner_cond_;
+  geometry_msgs::PoseStamped planner_goal_;
+  boost::thread* planner_thread_;
+
+//  std::vector<std::string> recovery_behaviors_;
+//  unsigned int recovery_index_;
 
 };
 

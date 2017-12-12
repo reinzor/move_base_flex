@@ -103,7 +103,7 @@ const std::string name_action_get_path = "get_path";
 //! Recovery action topic name
 const std::string name_action_recovery = "recovery";
 //! MoveBase action topic name
-const std::string name_action_move_base = "move_base";
+const std::string name_action_move_base = "move_base_abs";
 
 
 typedef boost::shared_ptr<dynamic_reconfigure::Server<mbf_abstract_nav::MoveBaseFlexConfig> > DynamicReconfigureServer;
